@@ -1,0 +1,31 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+float2 screen;
+
+float time;
+
+struct Vector2 {
+    float x, y;
+};
+
+float random(float2 uv)
+{
+    float noiseX = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time))) * 43758.5453));
+    float noiseY = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time) * 2.0)) * 43758.5453));
+    return noiseX * noiseY;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    float random_Number = random(id.xy);
+
+    Result[id.xy] = float4(random_Number, random_Number, random_Number, 0.0);
+}
