@@ -7,6 +7,8 @@ public class Perlin_Noise_Manager : MonoBehaviour
     [SerializeField] ComputeShader perlin_Noise;
     public RenderTexture render_Texture = null;
 
+    [SerializeField] bool give_Time_To_Perlin = true;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -24,7 +26,9 @@ public class Perlin_Noise_Manager : MonoBehaviour
 
         perlin_Noise.SetTexture(0, "Result", render_Texture);
         perlin_Noise.SetFloats("screen", new float[2] { render_Texture.width, render_Texture.height });
-        perlin_Noise.SetFloat("time", Time.deltaTime);
+
+        if (give_Time_To_Perlin) perlin_Noise.SetFloat("time", Time.deltaTime);
+
 
         uint x, y, z;
 

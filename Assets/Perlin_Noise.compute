@@ -9,23 +9,59 @@ float2 screen;
 
 float time;
 
+float interpolate(float a0, float a1, float w) {
+    /*
+    You may want clamping by inserting:
+    if (0.0 > w) return a0;
+    if (1.0 < w) return a1;
+    */
+    return (a1 - a0) * w + a0;
+    /*
+    Use this cubic interpolation [[Smoothstep]] instead, for a smooth appearance:
+    return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
+     
+    Use [[Smootherstep]] for an even smoother result with a second derivative equal to zero on boundaries:
+    return (a1 - a0) * ((w * (w * 6.0 - 15.0) + 10.0) * w * w * w) + a0;
+    */
+}
+
 struct Vector2 {
     float x, y;
 };
 
 float random(float2 uv)
 {
+    
     float noiseX = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time))) * 43758.5453));
     float noiseY = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time) * 2.0)) * 43758.5453));
     return noiseX * noiseY;
+    
+}
+
+float dotGridGradient(int floorX, int floorY, float x, float y) 
+{
+    float2 xy = { x,y };
+    float rand = random(xy);
+    Vector2 gradient;
+    gradient.x = cos(rand);
+    gradient.y = sin(rand);
+
+    float dx = x - (float)floorX;
+    float dy = y - (float)floorY;
+
+    return (dx * gradient.x + dy * gradient.y);
+}
+
+float perlin(float2 uv) 
+{
+
 }
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
+    float randomNumber = random(id.xy);
 
-    float random_Number = random(id.xy);
-
-    Result[id.xy] = float4(random_Number, random_Number, random_Number, 0.0);
+    Result[id.xy] = float4(randomNumber, randomNumber, randomNumber, 0.0);
 }

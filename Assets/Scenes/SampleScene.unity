@@ -316,3 +316,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   perlin_Noise: {fileID: 7200000, guid: faf2934fb4e02134095beb04263e0e99, type: 3}
   render_Texture: {fileID: 0}
+  give_Time_To_Perlin: 1
