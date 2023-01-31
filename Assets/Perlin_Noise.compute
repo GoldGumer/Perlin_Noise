@@ -5,63 +5,78 @@
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
-float2 screen;
+float interpolate(float pointOne, float pointTwo, float weight) {
+    //You may want clamping by inserting:
+    //if (0.0 > w) return pointOne;
+    //if (1.0 < w) return pointTwo;
+    
+    return (pointTwo - pointOne) * weight + pointOne;
+    
+    //Use this cubic interpolation [[Smoothstep]] instead, for a smooth appearance:
+    //return (pointTwo - pointOne) * (3.0 - weight * 2.0) * weight * weight + pointOne;
 
-float time;
-
-float interpolate(float a0, float a1, float w) {
-    /*
-    You may want clamping by inserting:
-    if (0.0 > w) return a0;
-    if (1.0 < w) return a1;
-    */
-    return (a1 - a0) * w + a0;
-    /*
-    Use this cubic interpolation [[Smoothstep]] instead, for a smooth appearance:
-    return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
-     
-    Use [[Smootherstep]] for an even smoother result with a second derivative equal to zero on boundaries:
-    return (a1 - a0) * ((w * (w * 6.0 - 15.0) + 10.0) * w * w * w) + a0;
-    */
+    //Use [[Smootherstep]] for an even smoother result with a second derivative equal to zero on boundaries:
+    //return (pointTwo - pointOne) * ((weight * (weight * 6.0f - 15.0f) + 10.0f) * weight * weight * weight) + pointOne;
 }
 
-struct Vector2 {
-    float x, y;
-};
-
-float random(float2 uv)
+float2 random(float2 uv)
 {
-    
-    float noiseX = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time))) * 43758.5453));
-    float noiseY = (frac(sin(dot(uv, float2(12.9898 * time, 78.233 * time) * 2.0)) * 43758.5453));
-    return noiseX * noiseY;
-    
+    float noiseX = (frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453));
+    float noiseY = (frac(sin(dot(uv, float2(12.9898, 78.233) * 2.0)) * 43758.5453));
+    return float2(noiseX, noiseY);
 }
 
 float dotGridGradient(int floorX, int floorY, float x, float y) 
 {
-    float2 xy = { x,y };
-    float rand = random(xy);
-    Vector2 gradient;
-    gradient.x = cos(rand);
-    gradient.y = sin(rand);
+    float2 xy = { floorX,floorY };
+    float2 rand = random(xy);
+
+    float2 vect;
+    vect.x = cos(rand.x);
+    vect.y = sin(rand.y);
 
     float dx = x - (float)floorX;
     float dy = y - (float)floorY;
 
-    return (dx * gradient.x + dy * gradient.y);
+    return (vect.x * dx + vect.y * dy);
 }
 
 float perlin(float2 uv) 
 {
+    int floorX = (int)floor(uv.x);
+    int floorXPlusOne = floorX + 1;
+    int floorY = (int)floor(uv.y);
+    int floorYPlusOne = floorY + 1;
 
+    //detirmines distance to interpolate
+    float xWeight = uv.x - (float)floorX;
+    float yWeight = uv.y - (float)floorY;
+
+    //interpolates grid point and gradients
+
+    float pointOne, pointTwo, intpolOne, intpolTwo, value;
+
+    pointOne = dotGridGradient(floorX, floorY, uv.x, uv.y);
+    pointTwo = dotGridGradient(floorXPlusOne, floorY, uv.x, uv.y);
+    intpolOne = interpolate(pointOne, pointTwo, xWeight);
+
+    pointOne = dotGridGradient(floorX, floorYPlusOne, uv.x, uv.y);
+    pointTwo = dotGridGradient(floorXPlusOne, floorYPlusOne, uv.x, uv.y);
+    intpolTwo = interpolate(pointOne, pointTwo, xWeight);
+
+    value = interpolate(intpolOne, intpolTwo, yWeight);
+
+    return value;
 }
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
-    float randomNumber = random(id.xy);
+    float2 uv = { id.x / 55.0f,id.y / 45.0f };
+    float perlinVal = perlin(uv.xy);
 
-    Result[id.xy] = float4(randomNumber, randomNumber, randomNumber, 0.0);
+    float value = perlinVal;
+
+    Result[id.xy] = float4(value, value, value, 0.0f);
 }
