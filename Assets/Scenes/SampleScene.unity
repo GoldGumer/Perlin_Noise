@@ -314,6 +314,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05b5ecf84cc76a6449bc270cefa94d6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  perlin_Noise: {fileID: 7200000, guid: faf2934fb4e02134095beb04263e0e99, type: 3}
-  render_Texture: {fileID: 0}
-  give_Time_To_Perlin: 1
+  perlinNoise: {fileID: 7200000, guid: faf2934fb4e02134095beb04263e0e99, type: 3}
+  randomize: 0
+  gridSize: 200
+  renderTexture: {fileID: 0}

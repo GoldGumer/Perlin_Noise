@@ -4,79 +4,68 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
+RWStructuredBuffer<int> Permutation;
+int PermutationLength;
+float GridSize;
 
-float interpolate(float pointOne, float pointTwo, float weight) {
-    //You may want clamping by inserting:
-    //if (0.0 > w) return pointOne;
-    //if (1.0 < w) return pointTwo;
-    
-    return (pointTwo - pointOne) * weight + pointOne;
-    
-    //Use this cubic interpolation [[Smoothstep]] instead, for a smooth appearance:
-    //return (pointTwo - pointOne) * (3.0 - weight * 2.0) * weight * weight + pointOne;
+float2 normalize(float2 position) 
+{
+    float hypotenuse = sqrt(position.x * position.x + position.y * position.y);
+    float normalizedX = position.x / hypotenuse;
+    float normalizedY = position.y / hypotenuse;
 
-    //Use [[Smootherstep]] for an even smoother result with a second derivative equal to zero on boundaries:
-    //return (pointTwo - pointOne) * ((weight * (weight * 6.0f - 15.0f) + 10.0f) * weight * weight * weight) + pointOne;
+    return float2(normalizedX, normalizedY);
 }
 
-float2 random(float2 uv)
+float dotproduct(float2 pos1, float2 pos2) 
 {
-    float noiseX = (frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453));
-    float noiseY = (frac(sin(dot(uv, float2(12.9898, 78.233) * 2.0)) * 43758.5453));
-    return float2(noiseX, noiseY);
+    float2 norm1 = pos1;
+    float2 norm2 = pos2;
+
+    return norm1.x * norm2.x + norm1.y * norm2.y;
 }
 
-float dotGridGradient(int floorX, int floorY, float x, float y) 
+float interpolate(float point1, float point2, float weight) 
 {
-    float2 xy = { floorX,floorY };
-    float2 rand = random(xy);
+    return (point2 - point1) * weight + point1;
+}
 
-    float2 vect;
-    vect.x = cos(rand.x);
-    vect.y = sin(rand.y);
-
-    float dx = x - (float)floorX;
-    float dy = y - (float)floorY;
-
-    return (vect.x * dx + vect.y * dy);
+float2 randomVector(float2 position) 
+{
+    float randomValue = (float)Permutation[(int)((round(position.x) + round(position.y)) / PermutationLength)];
+    float noiseX = (frac(sin(dot(position, float2(12.9898, 78.233)) + randomValue) * 43758.5453));
+    float noiseY = (frac(sin(dot(position, float2(12.9898, 78.233) * 2.0) + randomValue) * 43758.5453));
+    
+    return normalize(float2(noiseX - 0.5f, noiseY - 0.5f));
 }
 
 float perlin(float2 uv) 
 {
-    int floorX = (int)floor(uv.x);
-    int floorXPlusOne = floorX + 1;
-    int floorY = (int)floor(uv.y);
-    int floorYPlusOne = floorY + 1;
+    float2 position = float2(uv.x / GridSize, uv.y / GridSize);
+    float2 floorPosition = float2((float)floor(position.x), (float)floor(position.y));
 
-    //detirmines distance to interpolate
-    float xWeight = uv.x - (float)floorX;
-    float yWeight = uv.y - (float)floorY;
+    float weightX = position.x - floorPosition.x;
 
-    //interpolates grid point and gradients
+    float dot1 = (dotproduct(float2(position.x - floorPosition.x, position.y - floorPosition.y), randomVector(floorPosition)) + 1) / 2;
+    float dot2 = (dotproduct(float2(position.x - (floorPosition.x + 1), position.y - floorPosition.y), randomVector(floorPosition)) + 1) / 2;
+    float interpol1 = interpolate(dot1, dot2, weightX);
 
-    float pointOne, pointTwo, intpolOne, intpolTwo, value;
+    dot1 = (dotproduct(float2(position.x - floorPosition.x, position.y - (floorPosition.y + 1)), randomVector(floorPosition)) + 1) / 2;
+    dot2 = (dotproduct(float2(position.x - (floorPosition.x + 1), position.y - (floorPosition.y + 1)), randomVector(floorPosition)) + 1) / 2;
+    float interpol2 = interpolate(dot1, dot2, weightX);
 
-    pointOne = dotGridGradient(floorX, floorY, uv.x, uv.y);
-    pointTwo = dotGridGradient(floorXPlusOne, floorY, uv.x, uv.y);
-    intpolOne = interpolate(pointOne, pointTwo, xWeight);
+    return interpolate(interpol1, interpol2, position.y - floorPosition.y);
 
-    pointOne = dotGridGradient(floorX, floorYPlusOne, uv.x, uv.y);
-    pointTwo = dotGridGradient(floorXPlusOne, floorYPlusOne, uv.x, uv.y);
-    intpolTwo = interpolate(pointOne, pointTwo, xWeight);
-
-    value = interpolate(intpolOne, intpolTwo, yWeight);
-
-    return value;
+    //return dotproduct(float2(position.x - (float)round(position.x), position.y - (float)round(position.y)), randomVector(float2((float)round(position.x), (float)round(position.y))));
 }
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
-    float2 uv = { id.x / 55.0f,id.y / 45.0f };
-    float perlinVal = perlin(uv.xy);
 
-    float value = perlinVal;
+    float2 position = float2(round(id.x / GridSize), round(id.y / GridSize));
 
-    Result[id.xy] = float4(value, value, value, 0.0f);
+    //Result[id.xy] = float4(perlin(id.xy), randomVector(position).x, randomVector(position).y, 0.0f);
+    Result[id.xy] = float4(perlin(id.xy), 0.0f, 0.0f, 0.0f);
 }
