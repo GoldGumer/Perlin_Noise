@@ -43,15 +43,16 @@ float perlin(float2 uv)
 {
     float2 position = float2(uv.x / GridSize, uv.y / GridSize);
     float2 floorPosition = float2((float)floor(position.x), (float)floor(position.y));
+    float2 gridPosition = float2(position.x - (float)round(position.x), position.y - (float)round(position.y));
 
     float weightX = position.x - floorPosition.x;
 
-    float dot1 = (dotproduct(float2(position.x - floorPosition.x, position.y - floorPosition.y), randomVector(floorPosition)) + 1) / 2;
-    float dot2 = (dotproduct(float2(position.x - (floorPosition.x + 1), position.y - floorPosition.y), randomVector(floorPosition)) + 1) / 2;
+    float dot1 = dotproduct(gridPosition, randomVector(floorPosition));
+    float dot2 = dotproduct(gridPosition, randomVector(float2(floorPosition.x + 1, floorPosition.y)));
     float interpol1 = interpolate(dot1, dot2, weightX);
 
-    dot1 = (dotproduct(float2(position.x - floorPosition.x, position.y - (floorPosition.y + 1)), randomVector(floorPosition)) + 1) / 2;
-    dot2 = (dotproduct(float2(position.x - (floorPosition.x + 1), position.y - (floorPosition.y + 1)), randomVector(floorPosition)) + 1) / 2;
+    dot1 = dotproduct(gridPosition, randomVector(float2(floorPosition.x, floorPosition.y + 1)));
+    dot2 = dotproduct(gridPosition, randomVector(float2(floorPosition.x + 1, floorPosition.y + 1)));
     float interpol2 = interpolate(dot1, dot2, weightX);
 
     return interpolate(interpol1, interpol2, position.y - floorPosition.y);
@@ -66,6 +67,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float2 position = float2(round(id.x / GridSize), round(id.y / GridSize));
 
+    float value = perlin(id.xy);
+
     //Result[id.xy] = float4(perlin(id.xy), randomVector(position).x, randomVector(position).y, 0.0f);
-    Result[id.xy] = float4(perlin(id.xy), 0.0f, 0.0f, 0.0f);
+    Result[id.xy] = float4(value, value, value, 0.0f);
 }
