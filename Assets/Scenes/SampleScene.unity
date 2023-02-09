@@ -316,5 +316,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   perlinNoise: {fileID: 7200000, guid: faf2934fb4e02134095beb04263e0e99, type: 3}
   randomize: 0
-  gridSize: 20
+  gridSize: 200
   renderTexture: {fileID: 0}

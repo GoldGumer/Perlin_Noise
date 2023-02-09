@@ -25,9 +25,9 @@ float dotproduct(float2 pos1, float2 pos2)
     return norm1.x * norm2.x + norm1.y * norm2.y;
 }
 
-float interpolate(float point1, float point2, float weight) 
+float interpolate(float a0, float a1, float w) 
 {
-    return (point2 - point1) * weight + point1;
+    return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
 }
 
 float2 randomVector(float2 position) 
@@ -47,17 +47,17 @@ float perlin(float2 uv)
 
     float weightX = position.x - floorPosition.x;
 
-    float dot1 = dotproduct(gridPosition, randomVector(floorPosition));
-    float dot2 = dotproduct(gridPosition, randomVector(float2(floorPosition.x + 1, floorPosition.y)));
+    float4 dotproducts;
+
+    float dot1 = dotproduct(float2(position.x - floorPosition.x, position.y - floorPosition.y), randomVector(floorPosition));
+    float dot2 = dotproduct(float2(position.x - (floorPosition.x + 1), position.y - floorPosition.y), randomVector(float2(floorPosition.x + 1, floorPosition.y)));
     float interpol1 = interpolate(dot1, dot2, weightX);
 
-    dot1 = dotproduct(gridPosition, randomVector(float2(floorPosition.x, floorPosition.y + 1)));
-    dot2 = dotproduct(gridPosition, randomVector(float2(floorPosition.x + 1, floorPosition.y + 1)));
+    dot1 = dotproduct(float2(position.x - floorPosition.x, position.y - (floorPosition.y + 1)), randomVector(float2(floorPosition.x, floorPosition.y + 1)));
+    dot2 = dotproduct(float2(position.x - (floorPosition.x + 1), position.y - (floorPosition.y + 1)), randomVector(float2(floorPosition.x + 1, floorPosition.y + 1)));
     float interpol2 = interpolate(dot1, dot2, weightX);
 
     return interpolate(interpol1, interpol2, position.y - floorPosition.y);
-
-    //return dotproduct(float2(position.x - (float)round(position.x), position.y - (float)round(position.y)), randomVector(float2((float)round(position.x), (float)round(position.y))));
 }
 
 [numthreads(8,8,1)]
@@ -65,10 +65,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here!
 
-    float2 position = float2(round(id.x / GridSize), round(id.y / GridSize));
-
     float value = perlin(id.xy);
 
     //Result[id.xy] = float4(perlin(id.xy), randomVector(position).x, randomVector(position).y, 0.0f);
-    Result[id.xy] = float4(value, value, value, 0.0f);
+    Result[id.xy] = float4(value, value / (-1), 0.0f, 0.0f);
 }
