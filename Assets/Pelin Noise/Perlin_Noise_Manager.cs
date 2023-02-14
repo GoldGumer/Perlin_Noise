@@ -7,8 +7,10 @@ public class Perlin_Noise_Manager : MonoBehaviour
     [SerializeField] ComputeShader perlinNoise;
     [SerializeField] bool randomize = false;
     [SerializeField] float gridSize;
+    [SerializeField] Vector2Int textureSize;
 
     public RenderTexture renderTexture = null;
+
     int[] permutation = { 151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36,
                       103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0,
                       26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32, 57, 177, 33, 88, 237, 149, 56,
@@ -35,7 +37,7 @@ public class Perlin_Noise_Manager : MonoBehaviour
     {
         if (renderTexture == null)
         {
-            renderTexture = new RenderTexture(source.width, source.height, 24);
+            renderTexture = new RenderTexture(textureSize.x, textureSize.y, 24);
             renderTexture.enableRandomWrite = true;
             renderTexture.Create();
         }
