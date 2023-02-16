@@ -4,9 +4,9 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
-RWStructuredBuffer<int> Permutation;
-int PermutationLength;
-float GridSize;
+RWStructuredBuffer<int> permutation;
+int permutationLength;
+int gridSize;
 
 float2 normalize(float2 position) 
 {
@@ -32,7 +32,7 @@ float interpolate(float a0, float a1, float w)
 
 float2 randomVector(float2 position) 
 {
-    float randomValue = (float)Permutation[(int)((round(position.x) + round(position.y)) / PermutationLength)];
+    float randomValue = (float)permutation[(int)((round(position.x) + round(position.y)) / permutationLength)];
     float noiseX = (frac(sin(dot(position, float2(12.9898, 78.233)) + randomValue) * 43758.5453));
     float noiseY = (frac(sin(dot(position, float2(12.9898, 78.233) * 2.0) + randomValue) * 43758.5453));
     
@@ -41,13 +41,10 @@ float2 randomVector(float2 position)
 
 float perlin(float2 uv) 
 {
-    float2 position = float2(uv.x / GridSize, uv.y / GridSize);
+    float2 position = float2(uv.x / gridSize, uv.y / gridSize);
     float2 floorPosition = float2((float)floor(position.x), (float)floor(position.y));
-    float2 gridPosition = float2(position.x - (float)round(position.x), position.y - (float)round(position.y));
 
     float weightX = position.x - floorPosition.x;
-
-    float4 dotproducts;
 
     float dot1 = dotproduct(float2(position.x - floorPosition.x, position.y - floorPosition.y), randomVector(floorPosition));
     float dot2 = dotproduct(float2(position.x - (floorPosition.x + 1), position.y - floorPosition.y), randomVector(float2(floorPosition.x + 1, floorPosition.y)));
@@ -66,8 +63,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // TODO: insert actual code here!
 
     float value = perlin(id.xy);
-    float fractalValue = (value+ 1.0f) / 2.0f;
-
+    float perlinValue = (value + 0.5f) / 1.5f;
     //Result[id.xy] = float4(perlin(id.xy), randomVector(position).x, randomVector(position).y, 0.0f);
-    Result[id.xy] = float4(fractalValue, fractalValue, fractalValue, 0.0f);
+    Result[id.xy] = float4(perlinValue, perlinValue, perlinValue, 0.0f);
 }

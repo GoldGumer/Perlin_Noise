@@ -4,11 +4,17 @@ using UnityEngine;
 
 public class Perlin_Noise_Manager : MonoBehaviour
 {
+    //Algorithm used. runs on GPU for optimization
     [SerializeField] ComputeShader perlinNoise;
-    [SerializeField] bool randomize = false;
-    [SerializeField] float gridSize;
-    [SerializeField] Vector2Int textureSize;
 
+    //Randomize permutations?
+    bool randomize = false;
+
+    //Grid size for cells then the size of the noise map.
+    int gridSize;
+    Vector2Int textureSize;
+
+    //Generated Perlin Noise
     public RenderTexture renderTexture = null;
 
     int[] permutation = { 151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36,
@@ -30,10 +36,23 @@ public class Perlin_Noise_Manager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        randomize = false;
+        gridSize = 5;
+        textureSize = new Vector2Int(10, 10);
     }
 
-    private void OnRenderImage(RenderTexture source, RenderTexture destination)
+    public void Randomize()
+    {
+        randomize = true;
+    }
+
+    public void SetParameters(int gridSize, Vector2Int textureSize)
+    {
+        this.gridSize = gridSize;
+        this.textureSize = textureSize;
+    }
+
+    public void GeneratePerlinNoise()
     {
         if (renderTexture == null)
         {
@@ -43,8 +62,8 @@ public class Perlin_Noise_Manager : MonoBehaviour
         }
 
         perlinNoise.SetTexture(0, "Result", renderTexture);
-        perlinNoise.SetFloat("GridSize", gridSize);
-        perlinNoise.SetInt("PermutationLength", permutation.Length);
+        perlinNoise.SetInt("gridSize", gridSize);
+        perlinNoise.SetInt("permutationLength", permutation.Length);
 
         if (randomize)
         {
@@ -58,14 +77,14 @@ public class Perlin_Noise_Manager : MonoBehaviour
         int stride = permutation.Length * sizeof(int);
         ComputeBuffer permuationBuffer = new ComputeBuffer(permutation.Length, stride);
         permuationBuffer.SetData(permutation);
-        perlinNoise.SetBuffer(0, "Permutation", permuationBuffer);
+        perlinNoise.SetBuffer(0, "permutation", permuationBuffer);
 
         uint x, y, z;
 
         perlinNoise.GetKernelThreadGroupSizes(0, out x, out y, out z);
         perlinNoise.Dispatch(0, (int)(renderTexture.width / x), (int)(renderTexture.height / y), (int)z);
 
-        Graphics.Blit(renderTexture, destination);
+        
 
         permuationBuffer.Dispose();
     }
